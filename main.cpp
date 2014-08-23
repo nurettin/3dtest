@@ -1,4 +1,3 @@
-#include <iostream>
 #include <cstdlib>
 #include <cmath>
 #include <GL/glu.h>
@@ -8,8 +7,8 @@
 
 struct Shared
 {
-  CCamera cam;
-  double aax= 0.1, aaz= 0.1, vax= 0, vaz= 0;
+  Camera cam;
+  double aax= 0.01, aaz= 0.01, vax= 0, vaz= 0;
   double vf= 0, af= 0.001;
 } shared;
 

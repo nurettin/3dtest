@@ -1,12 +1,7 @@
 #include "camera.h"
-#include <math.h>
-#include <iostream>
+#include <cmath>
 
-#define SQR(x) (x*x)
-
-#define NULL_VECTOR F3dVector(0.0f,0.0f,0.0f)
-
-SF3dVector F3dVector ( GLfloat x, GLfloat y, GLfloat z )
+SF3dVector F3dVector(GLfloat x, GLfloat y, GLfloat z)
 {
 	SF3dVector tmp;
 	tmp.x = x;
@@ -15,36 +10,37 @@ SF3dVector F3dVector ( GLfloat x, GLfloat y, GLfloat z )
 	return tmp;
 }
 
-GLfloat GetF3dVectorLength( SF3dVector * v)
+GLfloat GetF3dVectorLength(SF3dVector const &v)
 {
-	return (GLfloat)(sqrt(SQR(v->x)+SQR(v->y)+SQR(v->z)));
+	return sqrt(v.x* v.x+ v.y* v.y+ v.z* v.z);
 }
 
-SF3dVector Normalize3dVector( SF3dVector v)
+SF3dVector Normalize3dVector(SF3dVector v)
 {
 	SF3dVector res;
-	float l = GetF3dVectorLength(&v);
-	if (l == 0.0f) return NULL_VECTOR;
-	res.x = v.x / l;
-	res.y = v.y / l;
-	res.z = v.z / l;
+	float l= GetF3dVectorLength(v);
+	if (l== 0.0f) return F3dVector(0, 0, 0);
+	res.x= v.x/ l;
+	res.y= v.y/ l;
+	res.z= v.z/ l;
 	return res;
 }
 
 SF3dVector operator+ (SF3dVector v, SF3dVector u)
 {
 	SF3dVector res;
-	res.x = v.x+u.x;
-	res.y = v.y+u.y;
-	res.z = v.z+u.z;
+	res.x= v.x+ u.x;
+	res.y= v.y+ u.y;
+	res.z= v.z+ u.z;
 	return res;
 }
+
 SF3dVector operator- (SF3dVector v, SF3dVector u)
 {
 	SF3dVector res;
-	res.x = v.x-u.x;
-	res.y = v.y-u.y;
-	res.z = v.z-u.z;
+	res.x= v.x- u.x;
+	res.y= v.y- u.y;
+	res.z= v.z- u.z;
 	return res;
 }
 
@@ -52,87 +48,78 @@ SF3dVector operator- (SF3dVector v, SF3dVector u)
 SF3dVector operator* (SF3dVector v, float r)
 {
 	SF3dVector res;
-	res.x = v.x*r;
-	res.y = v.y*r;
-	res.z = v.z*r;
+	res.x= v.x* r;
+	res.y= v.y* r;
+	res.z= v.z* r;
 	return res;
 }
 
-SF3dVector CrossProduct (SF3dVector * u, SF3dVector * v)
+SF3dVector CrossProduct (SF3dVector* u, SF3dVector* v)
 {
 	SF3dVector resVector;
-	resVector.x = u->y*v->z - u->z*v->y;
-	resVector.y = u->z*v->x - u->x*v->z;
-	resVector.z = u->x*v->y - u->y*v->x;
+	resVector.x= u->y* v->z- u->z* v->y;
+	resVector.y= u->z* v->x- u->x* v->z;
+	resVector.z= u->x* v->y- u->y* v->x;
 
 	return resVector;
 }
-float operator* (SF3dVector v, SF3dVector u)	//dot product
+float operator* (SF3dVector v, SF3dVector u)
 {
 	return v.x*u.x+v.y*u.y+v.z*u.z;
 }
 
+Camera::Camera()
+: Position(F3dVector(0, 0, 0))
+, ViewDir(F3dVector(0, 0, -1))
+, RightVector(F3dVector(1, 0, 0))
+, UpVector(F3dVector(0, 1, 0))
+, RotatedX(0)
+, RotatedY(0)
+, RotatedZ(0)
+{}
 
-
-
-/***************************************************************************************/
-
-CCamera::CCamera()
-{
-	//Init with standard OGL values:
-	Position = F3dVector (0.0, 0.0,	0.0);
-	ViewDir = F3dVector( 0.0, 0.0, -1.0);
-	RightVector = F3dVector (1.0, 0.0, 0.0);
-	UpVector = F3dVector (0.0, 1.0, 0.0);
-
-	//Only to be sure:
-	RotatedX = RotatedY = RotatedZ = 0.0;
-}
-
-void CCamera::Move (SF3dVector Direction)
+void Camera::Move(SF3dVector Direction)
 {
 	Position = Position + Direction;
 }
 
-void CCamera::RotateX (GLfloat Angle)
+void Camera::RotateX (GLfloat Angle)
 {
 	RotatedX += Angle;
 	
 	//Rotate viewdir around the right vector:
-	ViewDir = Normalize3dVector(ViewDir*cos(Angle*M_PIdiv180)
-								+ UpVector*sin(Angle*M_PIdiv180));
+	ViewDir = Normalize3dVector(ViewDir*cos(Angle)
+								+ UpVector*sin(Angle));
 
 	//now compute the new UpVector (by cross product)
-	UpVector = CrossProduct(&ViewDir, &RightVector)*-1;
-
-	
+	UpVector = CrossProduct(&ViewDir, &RightVector)* -1;
 }
 
-void CCamera::RotateY (GLfloat Angle)
+void Camera::RotateY(GLfloat Angle)
 {
 	RotatedY += Angle;
 	
 	//Rotate viewdir around the up vector:
-	ViewDir = Normalize3dVector(ViewDir*cos(Angle*M_PIdiv180)
-								- RightVector*sin(Angle*M_PIdiv180));
+	ViewDir = Normalize3dVector(ViewDir*cos(Angle)
+								- RightVector*sin(Angle));
 
 	//now compute the new RightVector (by cross product)
 	RightVector = CrossProduct(&ViewDir, &UpVector);
 }
 
-void CCamera::RotateZ (GLfloat Angle)
+void Camera::RotateZ(GLfloat Angle)
 {
 	RotatedZ += Angle;
 	
 	//Rotate viewdir around the right vector:
-	RightVector = Normalize3dVector(RightVector*cos(Angle*M_PIdiv180)
-								+ UpVector*sin(Angle*M_PIdiv180));
+	RightVector = Normalize3dVector(RightVector*cos(Angle)
+								+ UpVector*sin(Angle));
 
 	//now compute the new UpVector (by cross product)
 	UpVector = CrossProduct(&ViewDir, &RightVector)*-1;
 }
 
-void CCamera::Render( void )
+void Camera::Render() const
 {
 
 	//The point at which the camera looks:
@@ -145,17 +132,18 @@ void CCamera::Render( void )
 
 }
 
-void CCamera::MoveForward( GLfloat Distance )
+void Camera::MoveForward(GLfloat Distance)
 {
-	Position = Position + (ViewDir*-Distance);
+	Position= Position+ ViewDir* -Distance;
 }
 
-void CCamera::StrafeRight ( GLfloat Distance )
+void Camera::StrafeRight(GLfloat Distance)
 {
-	Position = Position + (RightVector*Distance);
+	Position= Position+ RightVector* Distance;
 }
 
-void CCamera::MoveUpward( GLfloat Distance )
+void Camera::MoveUpward(GLfloat Distance)
 {
-	Position = Position + (UpVector*Distance);
+	Position= Position+ UpVector* Distance;
 }
+

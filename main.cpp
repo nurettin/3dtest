@@ -4,24 +4,36 @@
 #include <GL/glu.h>
 #include <GL/glut.h>
 #include "util.h"
+#include "camera.h"
 
 struct Shared
 {
-  GLdouble planex= 0, planey= 0, planez= 0, roll= 0, pitch= 0, heading= 0; 
-  double velocity= 0, acceleration= 0.001;
+  CCamera cam;
+  double aax= 0.1, aaz= 0.1, vax= 0, vaz= 0;
+  double vf= 0, af= 0.001;
 } shared;
 
-void pilot()
+void draw_ship()
 {
-  glRotated(shared.roll, 0, 0, 1);
-  glRotated(shared.pitch, 0, 1, 0);
-  glRotated(shared.heading, 1, 0, 0);
-  glTranslated(-shared.planex, -shared.planey, -shared.planez);
-  float mat[16];
-  glGetFloatv(GL_MODELVIEW_MATRIX, mat);
-  shared.planex-= mat[2]* shared.velocity;
-  shared.planey-= mat[6]* shared.velocity;
-  shared.planez-= mat[10]* shared.velocity;
+  glTranslatef(0, -0.5, -1);
+  glPushMatrix();
+    // left wing
+    glPushMatrix();
+      glTranslatef(1, 0, 0);
+      glScalef(1, 0.5, 0.5);
+      glutWireCube(1);
+    glPopMatrix();
+    // right wing
+    glPushMatrix();
+      glTranslatef(-1, 0, 0);
+      glScalef(1, 0.5, 0.5);
+      glutWireCube(1);
+    glPopMatrix();
+    // torso
+    glTranslatef(0, 0, -1);
+    glScalef(1, 0.5, 2);
+    glutWireCube(1);
+  glPopMatrix();
 }
 
 void init_gl()
@@ -44,8 +56,15 @@ void render_gl()
   glClear(GL_COLOR_BUFFER_BIT);
   glColor3f(1.0, 1.0, 1.0);
   glLoadIdentity();
-  pilot();
-  glutWireSphere(1, 50, 50);
+  draw_ship();
+  shared.cam.RotateX(shared.vax);
+  shared.cam.RotateZ(shared.vaz);
+  shared.cam.MoveForward(-shared.vf);
+  shared.cam.Render();
+  glTranslatef(0, 0, -200);
+  glutWireSphere(100, 100, 100);
+  glTranslatef(0, -200, -200);
+  glutWireSphere(100, 100, 100);
   glFlush();
 }
 
@@ -57,26 +76,34 @@ void event_sdl(SDL_Event const &e)
       switch(e.key.keysym.sym)
       {
         case SDLK_w:
-          shared.heading-= 1;
+          shared.vax-= shared.aax;
+          if(shared.vax< -shared.aax)
+            shared.vax= -shared.aax;
         break;
         case SDLK_s:
-          shared.heading+= 1;
+          shared.vax+= shared.aax;
+          if(shared.vax> shared.aax)
+            shared.vax= shared.aax;
         break;
         case SDLK_a:
-          shared.roll-= 1;
+          shared.vaz+= shared.aaz;
+          if(shared.vaz> shared.aaz)
+            shared.vaz= shared.aaz;
         break;
         case SDLK_d:
-          shared.roll+= 1;
+          shared.vaz-= shared.aaz;
+          if(shared.vaz< -shared.aaz)
+            shared.vaz= -shared.aaz;
         break;
         case SDLK_UP:
-          shared.velocity+= shared.acceleration;
-          if(shared.velocity> 10)
-            shared.velocity= 10;
+          shared.vf+= shared.af;
+          if(shared.vf> 10)
+            shared.vf= 10;
         break;
         case SDLK_DOWN:
-          shared.velocity-= shared.acceleration;
-          if(shared.velocity< 0)
-            shared.velocity= 0;
+          shared.vf-= shared.af;
+          if(shared.vf< 0)
+            shared.vf= 0;
         break;
       }
     break;
